@@ -321,6 +321,8 @@ struct tx_details
     uint64_t blk_height;
     size_t   version;
 
+    bool juvenile;
+
     bool has_additional_tx_pub_keys {false};
 
     char     pID; // '-' - no payment ID,
@@ -392,6 +394,7 @@ struct tx_details
                 {"no_nonrct_inputs"  , num_nonrct_inputs},
                 {"mixin"             , mixin_str},
                 {"blk_height"        , blk_height},
+                {"juvenile"          , juvenile},
                 {"version"           , static_cast<uint64_t>(version)},
                 {"has_payment_id"    , payment_id  != null_hash},
                 {"has_payment_id8"   , payment_id8 != null_hash8},
@@ -2849,6 +2852,10 @@ show_checkrawtx(string raw_tx_data, string action)
                 vector<vector<uint64_t>> mixin_timestamp_groups;
                 vector<uint64_t> real_output_indices;
 
+                // SH CODE
+                // Vector that contains the height of mixin
+                vector<uint64_t> mixin_blocks;
+
                 uint64_t sum_outputs_amounts {0};
 
                 for (size_t i = 0; i < no_of_sources; ++i)
@@ -2970,6 +2977,9 @@ show_checkrawtx(string raw_tx_data, string action)
                             cerr << "Cant get block: " << txd.blk_height << endl;
                             return string("Cant get block: "  + to_string(txd.blk_height));
                         }
+
+                        // Add the block height of the mixin to the vector mixin_block
+                        mixin_blocks.push_back(txd.blk_height);
 
                         pair<string, string> age = get_age(server_timestamp, blk.timestamp);
 
@@ -6086,6 +6096,8 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
             {"error_msg"             , string("")},
             {"have_raw_tx"           , false},
             {"show_more_details_link", true},
+            {"juvenile"              , false},
+            {"one_output"            , false},
             {"construction_time"     , string {}},
     };
 
@@ -6097,6 +6109,16 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     // append additional public tx keys, if there are any, to the html context
 
     string add_tx_pub_keys;
+
+
+    bool juvenile = false;
+    vector<uint64_t> mixin_heights;
+    bool one_output = false;
+
+    uint64_t number_outputs = txd.output_pub_keys.size();
+    if(number_outputs < 2){
+       context["one_output"] = true;
+    }
 
     for (auto const& apk: txd.additional_pks)
         add_tx_pub_keys += pod_to_hex(apk) + ";";
@@ -6300,6 +6322,9 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
                         {"mix_is_it_real", false}, // a placeholder for future
                 });
 
+                // Juvenile spend warning: save mixin heights
+                mixin_heights.push_back(output_data.height);
+
                 // get mixin timestamp from its orginal block
                 mixin_timestamps.push_back(blk.timestamp);
             }
@@ -6330,6 +6355,12 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     {
         uint64_t min_mix_timestamp {0};
         uint64_t max_mix_timestamp {0};
+
+        uint64_t max_mix_blk = *max_element(mixin_heights.begin(), mixin_heights.end());
+        if(tx_blk_height - max_mix_blk < 10) {
+            context["juvenile"] = true;
+            //std::cout << "Suspicious transaction" << endl;
+        }
 
         pair<mstch::array, double> mixins_timescales
                 = construct_mstch_mixin_timescales(
