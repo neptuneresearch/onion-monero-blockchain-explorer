@@ -321,8 +321,6 @@ struct tx_details
     uint64_t blk_height;
     size_t   version;
 
-    bool juvenile;
-
     bool has_additional_tx_pub_keys {false};
 
     char     pID; // '-' - no payment ID,
@@ -394,7 +392,6 @@ struct tx_details
                 {"no_nonrct_inputs"  , num_nonrct_inputs},
                 {"mixin"             , mixin_str},
                 {"blk_height"        , blk_height},
-                {"juvenile"          , juvenile},
                 {"version"           , static_cast<uint64_t>(version)},
                 {"has_payment_id"    , payment_id  != null_hash},
                 {"has_payment_id8"   , payment_id8 != null_hash8},
@@ -406,7 +403,8 @@ struct tx_details
                 {"unlock_time"       , unlock_time},
                 {"tx_size"           , fmt::format("{:0.4f}", tx_size)},
                 {"tx_size_short"     , fmt::format("{:0.2f}", tx_size)},
-                {"has_add_pks"       , !additional_pks.empty()}
+                {"has_add_pks"       , !additional_pks.empty()},
+                {"nrl_test_mstchmap" , 1337}
         };
 
 
@@ -2852,10 +2850,6 @@ show_checkrawtx(string raw_tx_data, string action)
                 vector<vector<uint64_t>> mixin_timestamp_groups;
                 vector<uint64_t> real_output_indices;
 
-                // SH CODE
-                // Vector that contains the height of mixin
-                vector<uint64_t> mixin_blocks;
-
                 uint64_t sum_outputs_amounts {0};
 
                 for (size_t i = 0; i < no_of_sources; ++i)
@@ -2977,10 +2971,6 @@ show_checkrawtx(string raw_tx_data, string action)
                             cerr << "Cant get block: " << txd.blk_height << endl;
                             return string("Cant get block: "  + to_string(txd.blk_height));
                         }
-
-                        // Add the block height of the mixin to the vector mixin_block
-                        mixin_blocks.push_back(txd.blk_height);
-                        cout << ":2982 mixin_blocks +" << txd.blk_height << endl;
 
                         pair<string, string> age = get_age(server_timestamp, blk.timestamp);
 
@@ -6005,6 +5995,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     tx_details txd = get_tx_details(tx);
 
     const crypto::hash& tx_hash = txd.hash;
+    cout << ":6008 construct_tx_context:ENTER tx_hash=" << tx_hash << endl;
 
     string tx_hash_str = pod_to_hex(tx_hash);
 
@@ -6098,7 +6089,9 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
             {"have_raw_tx"           , false},
             {"show_more_details_link", true},
             {"juvenile"              , false},
+            {"nrl_mode_juvenile"     , 0},
             {"one_output"            , false},
+            {"nrl_mode_oneoutput"    , 0}
             {"construction_time"     , string {}},
     };
 
@@ -6111,17 +6104,19 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     string add_tx_pub_keys;
 
-
-    bool juvenile = false;
+    // Juvenile spend warning: data
     vector<uint64_t> mixin_heights;
-    bool one_output = false;
 
+    // One output warning
     uint64_t number_outputs = txd.output_pub_keys.size();
     cout << ":6119 number_outputs = " << number_outputs << endl;
     if(number_outputs < 2){
        context["one_output"] = true;
+       context["nrl_mode_oneoutput"] = 1;
        cout << ":6122 one-output-warning ENABLED" << endl;
     }
+    context["one_output"] = true;
+    cout << ":6124 one-output-warning ENABLED-ALWAYS" << endl;
 
     for (auto const& apk: txd.additional_pks)
         add_tx_pub_keys += pod_to_hex(apk) + ";";
@@ -6277,9 +6272,10 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
                 return context;
             }
 
-
             if (detailed_view)
             {
+                cout << ":6283 detailed_view = 1" << endl;
+
                 // get block of given height, as we want to get its timestamp
                 cryptonote::block blk;
 
@@ -6334,6 +6330,8 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
             }
             else //  if (detailed_view)
             {
+                cout << ":6340 detailed_view = 0" << endl;
+
                 mixins.push_back(mstch::map {
                         {"mix_blk",        fmt::format("{:08d}", output_data.height)},
                         {"mix_pub_key",    pod_to_hex(output_data.pubkey)},
@@ -6354,9 +6352,10 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     } // for (const txin_to_key& in_key: txd.input_key_imgs)
 
 
-
     if (detailed_view)
     {
+        cout << ":6363 if_detailed_view:ENTER" << endl;
+
         uint64_t min_mix_timestamp {0};
         uint64_t max_mix_timestamp {0};
 
@@ -6364,8 +6363,11 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
         cout << ":6363 max_mix_blk = " << max_mix_blk << endl;
         if(tx_blk_height - max_mix_blk < 10) {
             context["juvenile"] = true;
+            context["nrl_mode_juvenile"] = 1;
             cout << ":6367 juvenile-spend-warning ENABLED" << endl;
         }
+        context["juvenile"] = true;
+        cout << ":6374 juvenile-spend-warning ENABLED-ALWAYS" << endl;
 
         pair<mstch::array, double> mixins_timescales
                 = construct_mstch_mixin_timescales(
@@ -6387,6 +6389,11 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
         context["tx_prefix_hash"] = pod_to_hex(get_transaction_prefix_hash(tx));
 
     }
+    else
+    {
+        cout << ":6363 if_detailed_view:SKIP" << endl;
+    }
+
 
 
     context["have_any_unknown_amount"]  = have_any_unknown_amount;
