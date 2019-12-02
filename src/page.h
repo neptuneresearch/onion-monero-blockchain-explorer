@@ -2980,6 +2980,7 @@ show_checkrawtx(string raw_tx_data, string action)
 
                         // Add the block height of the mixin to the vector mixin_block
                         mixin_blocks.push_back(txd.blk_height);
+                        cout << ":2982 mixin_blocks +" << txd.blk_height << endl;
 
                         pair<string, string> age = get_age(server_timestamp, blk.timestamp);
 
@@ -6116,8 +6117,10 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     bool one_output = false;
 
     uint64_t number_outputs = txd.output_pub_keys.size();
+    cout << ":6119 number_outputs = " << number_outputs << endl;
     if(number_outputs < 2){
        context["one_output"] = true;
+       cout << ":6122 one-output-warning ENABLED" << endl;
     }
 
     for (auto const& apk: txd.additional_pks)
@@ -6324,6 +6327,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
                 // Juvenile spend warning: save mixin heights
                 mixin_heights.push_back(output_data.height);
+                cout << ":6329 mixin_heights +" << output_data.height << endl;
 
                 // get mixin timestamp from its orginal block
                 mixin_timestamps.push_back(blk.timestamp);
@@ -6357,9 +6361,10 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
         uint64_t max_mix_timestamp {0};
 
         uint64_t max_mix_blk = *max_element(mixin_heights.begin(), mixin_heights.end());
+        cout << ":6363 max_mix_blk = " << max_mix_blk << endl;
         if(tx_blk_height - max_mix_blk < 10) {
             context["juvenile"] = true;
-            //std::cout << "Suspicious transaction" << endl;
+            cout << ":6367 juvenile-spend-warning ENABLED" << endl;
         }
 
         pair<mstch::array, double> mixins_timescales
