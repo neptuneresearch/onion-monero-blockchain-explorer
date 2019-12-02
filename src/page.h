@@ -6091,8 +6091,8 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
             {"juvenile"              , false},
             {"nrl_mode_juvenile"     , 0},
             {"one_output"            , false},
-            {"nrl_mode_oneoutput"    , 0}
-            {"construction_time"     , string {}},
+            {"nrl_mode_oneoutput"    , 0},
+            {"construction_time"     , string {}}
     };
 
     // append tx_json as in raw format to html
