@@ -28,7 +28,6 @@
 #include "MempoolStatus.h"
 
 #include "../ext/crow/crow.h"
-#include "../ext/crow/logging.h"
 
 #include "../ext/json.hpp"
 
