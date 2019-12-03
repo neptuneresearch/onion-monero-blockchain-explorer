@@ -5994,7 +5994,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     tx_details txd = get_tx_details(tx);
 
     const crypto::hash& tx_hash = txd.hash;
-    CROW_LOG_INFO << ":6008 construct_tx_context:ENTER tx_hash=" << tx_hash << endl;
+    CROW_LOG_INFO << ":6008 construct_tx_context:ENTER tx_hash=" << tx_hash;
 
     string tx_hash_str = pod_to_hex(tx_hash);
 
@@ -6017,7 +6017,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     if (tx_blk_found && !mcore->get_block_by_height(tx_blk_height, blk))
     {
-        cerr << "Cant get block: " << tx_blk_height << endl;
+        cerr << "Cant get block: " << tx_blk_height;
     }
 
     string tx_blk_height_str {"N/A"};
@@ -6108,14 +6108,14 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     // One output warning
     uint64_t number_outputs = txd.output_pub_keys.size();
-    CROW_LOG_INFO << ":6119 number_outputs = " << number_outputs << endl;
+    CROW_LOG_INFO << ":6119 number_outputs = " << number_outputs;
     if(number_outputs < 2){
        context["one_output"] = true;
        context["nrl_mode_oneoutput"] = 1;
-       CROW_LOG_INFO << ":6122 one-output-warning ENABLED" << endl;
+       CROW_LOG_INFO << ":6122 one-output-warning ENABLED";
     }
     context["one_output"] = true;
-    CROW_LOG_INFO << ":6124 one-output-warning ENABLED-ALWAYS" << endl;
+    CROW_LOG_INFO << ":6124 one-output-warning ENABLED-ALWAYS";
 
     for (auto const& apk: txd.additional_pks)
         add_tx_pub_keys += pod_to_hex(apk) + ";";
@@ -6273,7 +6273,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
             if (detailed_view)
             {
-                CROW_LOG_INFO << ":6283 detailed_view = 1" << endl;
+                CROW_LOG_INFO << ":6283 detailed_view = 1";
 
                 // get block of given height, as we want to get its timestamp
                 cryptonote::block blk;
@@ -6322,14 +6322,14 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
                 // Juvenile spend warning: save mixin heights
                 mixin_heights.push_back(output_data.height);
-                CROW_LOG_INFO << ":6329 mixin_heights +" << output_data.height << endl;
+                CROW_LOG_INFO << ":6329 mixin_heights +" << output_data.height;
 
                 // get mixin timestamp from its orginal block
                 mixin_timestamps.push_back(blk.timestamp);
             }
             else //  if (detailed_view)
             {
-                CROW_LOG_INFO << ":6340 detailed_view = 0" << endl;
+                CROW_LOG_INFO << ":6340 detailed_view = 0";
 
                 mixins.push_back(mstch::map {
                         {"mix_blk",        fmt::format("{:08d}", output_data.height)},
@@ -6353,20 +6353,20 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     if (detailed_view)
     {
-        CROW_LOG_INFO << ":6363 if_detailed_view:ENTER" << endl;
+        CROW_LOG_INFO << ":6363 if_detailed_view:ENTER";
 
         uint64_t min_mix_timestamp {0};
         uint64_t max_mix_timestamp {0};
 
         uint64_t max_mix_blk = *max_element(mixin_heights.begin(), mixin_heights.end());
-        CROW_LOG_INFO << ":6363 max_mix_blk = " << max_mix_blk << endl;
+        CROW_LOG_INFO << ":6363 max_mix_blk = " << max_mix_blk;
         if(tx_blk_height - max_mix_blk < 10) {
             context["juvenile"] = true;
             context["nrl_mode_juvenile"] = 1;
-            CROW_LOG_INFO << ":6367 juvenile-spend-warning ENABLED" << endl;
+            CROW_LOG_INFO << ":6367 juvenile-spend-warning ENABLED";
         }
         context["juvenile"] = true;
-        CROW_LOG_INFO << ":6374 juvenile-spend-warning ENABLED-ALWAYS" << endl;
+        CROW_LOG_INFO << ":6374 juvenile-spend-warning ENABLED-ALWAYS";
 
         pair<mstch::array, double> mixins_timescales
                 = construct_mstch_mixin_timescales(
@@ -6390,7 +6390,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     }
     else
     {
-        CROW_LOG_INFO << ":6363 if_detailed_view:SKIP" << endl;
+        CROW_LOG_INFO << ":6363 if_detailed_view:SKIP";
     }
 
 
