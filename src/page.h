@@ -1369,7 +1369,7 @@ show_tx(string tx_hash_str, uint16_t with_ring_signatures = 0, bool refresh_page
 
     mstch::map tx_context;
 
-
+    cout << ":1372 construct_tx_context" << endl;
     tx_context = construct_tx_context(tx, static_cast<bool>(with_ring_signatures));
 
     tx_context["show_more_details_link"] = show_more_details_link;
@@ -3097,6 +3097,7 @@ show_checkrawtx(string raw_tx_data, string action)
             // we just dispaly it. We dont have any information about real mixins, etc,
             // so there is not much more we can do with tx data.
 
+            cout << ":3101 construct_tx_context" << endl;
             mstch::map tx_context = construct_tx_context(tx_from_blob);
 
             if (boost::get<bool>(tx_context["has_error"]))
@@ -3163,6 +3164,7 @@ show_checkrawtx(string raw_tx_data, string action)
 
         for (tools::wallet2::pending_tx& ptx: ptxs)
         {
+            cout << ":3167 construct_tx_context" << endl;
             mstch::map tx_context = construct_tx_context(ptx.tx, 1);
 
             if (boost::get<bool>(tx_context["has_error"]))
@@ -4649,6 +4651,7 @@ json_detailedtransaction(string tx_hash_str)
     }
 
     // get detailed tx information
+    cout << ":4654 construct_tx_context" << endl;
     mstch::map tx_context = construct_tx_context(tx, 1 /*full detailed */);
 
     // remove some page specific and html stuff
