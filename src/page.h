@@ -6091,9 +6091,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
             {"have_raw_tx"           , false},
             {"show_more_details_link", true},
             {"juvenile"              , false},
-            {"nrl_mode_juvenile"     , 0},
             {"one_output"            , false},
-            {"nrl_mode_oneoutput"    , 0},
             {"construction_time"     , string {}}
     };
 
@@ -6111,14 +6109,14 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     // One output warning
     uint64_t number_outputs = txd.output_pub_keys.size();
-    CROW_LOG_INFO << ":6119 number_outputs = " << number_outputs;
+    CROW_LOG_INFO << ":6114 number_outputs = " << number_outputs;
     if(number_outputs < 2){
-       context["one_output"] = true;
-       context["nrl_mode_oneoutput"] = 1;
-       CROW_LOG_INFO << ":6122 one-output-warning ENABLED";
+        context["one_output"] = true;
+        CROW_LOG_INFO << ":6117 one-output-warning ON";
     }
-    context["one_output"] = true;
-    CROW_LOG_INFO << ":6124 one-output-warning ENABLED-ALWAYS";
+    else {
+        CROW_LOG_INFO << ":6120 one-output-warning OFF";
+    }
 
     for (auto const& apk: txd.additional_pks)
         add_tx_pub_keys += pod_to_hex(apk) + ";";
@@ -6365,11 +6363,11 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
         CROW_LOG_INFO << ":6363 max_mix_blk = " << max_mix_blk;
         if(tx_blk_height - max_mix_blk < 10) {
             context["juvenile"] = true;
-            context["nrl_mode_juvenile"] = 1;
-            CROW_LOG_INFO << ":6367 juvenile-spend-warning ENABLED";
+            CROW_LOG_INFO << ":6367 juvenile-spend-warning ON";
         }
-        context["juvenile"] = true;
-        CROW_LOG_INFO << ":6374 juvenile-spend-warning ENABLED-ALWAYS";
+        else {
+            CROW_LOG_INFO << ":6372 juvenile-spend-warning OFF";
+        }
 
         pair<mstch::array, double> mixins_timescales
                 = construct_mstch_mixin_timescales(
