@@ -51,13 +51,6 @@
         <tr>
             <td colspan="3" style="max-width:700px">Extra: {{extra}}</td>
         </tr>
-
-
-        <tr>
-            <td colspan="3" style="max-width:700px">Juvenile: {{juvenile}}</td>
-        </tr>
-
-
     </table>
 
 
@@ -79,23 +72,22 @@
       </table>
   </div>
 
+{{#nrl_warning_juvenile}}
+  <div class="warning">
+      <h3>This is a warning message</h3>
+      <p>One of the ring members is younger than the lock time in the reference wallet, which enables software fingerprinting and may allow and adversary to infer the true TXO being spent.
+      </p>
+  </div>
+{{/nrl_warning_juvenile}}
+
+{{#nrl_warning_outputsingle}}
+  <div class="warning">
+      <h3>This transaction contains less than 2 outputs</h3>
+      <p> This transaction has only one output, which (1) increases linkability risk, (2) reveals use of non-standard software, and (3) suggests that the transaction represents a wallet sweep or churn.</p>
+  </div>
+{{/nrl_warning_outputsingle}}
+
     {{^have_raw_tx}}
-
-{{#juvenile}}
-	<div class="warning">
-		<h3>This is a warning message</h3>
-		<p>One of the ring members is younger than the lock time in the reference wallet, which enables software fingerprinting and may allow and adversary to infer the true TXO being spent.
-		</p>
-	</div>
-{{/juvenile}}
-
-
-{{#one_output}}
-	<div class="warning">
-		<h3>This transaction contains less than 2 outputs</h3>
-		<p> This transaction has only one output, which (1) increases linkability risk, (2) reveals use of non-standard software, and (3) suggests that the transaction represents a wallet sweep or churn.</p>
-	</div>
-{{/one_output}}
 	
     <div class="center" style="width:90%">
         <div class="tabs">

@@ -1369,7 +1369,8 @@ show_tx(string tx_hash_str, uint16_t with_ring_signatures = 0, bool refresh_page
 
     mstch::map tx_context;
 
-    cout << ":1372 construct_tx_context" << endl;
+
+    CROW_LOG_INFO << "[N] :1372 construct_tx_context";
     tx_context = construct_tx_context(tx, static_cast<bool>(with_ring_signatures));
 
     tx_context["show_more_details_link"] = show_more_details_link;
@@ -3097,7 +3098,7 @@ show_checkrawtx(string raw_tx_data, string action)
             // we just dispaly it. We dont have any information about real mixins, etc,
             // so there is not much more we can do with tx data.
 
-            cout << ":3101 construct_tx_context" << endl;
+            CROW_LOG_INFO << "[N] :3101 construct_tx_context";
             mstch::map tx_context = construct_tx_context(tx_from_blob);
 
             if (boost::get<bool>(tx_context["has_error"]))
@@ -3164,7 +3165,7 @@ show_checkrawtx(string raw_tx_data, string action)
 
         for (tools::wallet2::pending_tx& ptx: ptxs)
         {
-            cout << ":3167 construct_tx_context" << endl;
+            CROW_LOG_INFO << "[N] :3167 construct_tx_context";
             mstch::map tx_context = construct_tx_context(ptx.tx, 1);
 
             if (boost::get<bool>(tx_context["has_error"]))
@@ -4651,7 +4652,7 @@ json_detailedtransaction(string tx_hash_str)
     }
 
     // get detailed tx information
-    cout << ":4654 construct_tx_context" << endl;
+    CROW_LOG_INFO << "[N] :4654 construct_tx_context";
     mstch::map tx_context = construct_tx_context(tx, 1 /*full detailed */);
 
     // remove some page specific and html stuff
@@ -5997,7 +5998,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     tx_details txd = get_tx_details(tx);
 
     const crypto::hash& tx_hash = txd.hash;
-    CROW_LOG_INFO << ":6008 construct_tx_context:ENTER tx_hash=" << tx_hash;
+    CROW_LOG_INFO << "[N] :6000 construct_tx_context:ENTER tx_hash=" << tx_hash;
 
     string tx_hash_str = pod_to_hex(tx_hash);
 
@@ -6020,7 +6021,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     if (tx_blk_found && !mcore->get_block_by_height(tx_blk_height, blk))
     {
-        cerr << "Cant get block: " << tx_blk_height;
+        cerr << "Cant get block: " << tx_blk_height << endl;
     }
 
     string tx_blk_height_str {"N/A"};
@@ -6090,8 +6091,8 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
             {"error_msg"             , string("")},
             {"have_raw_tx"           , false},
             {"show_more_details_link", true},
-            {"juvenile"              , false},
-            {"one_output"            , false},
+            {"nrl_warning_juvenile"  , false},
+            {"nrl_warning_outputsingle" , false},
             {"construction_time"     , string {}}
     };
 
@@ -6109,13 +6110,13 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     // One output warning
     uint64_t number_outputs = txd.output_pub_keys.size();
-    CROW_LOG_INFO << ":6114 number_outputs = " << number_outputs;
+    CROW_LOG_INFO << "[N] :6112 number_outputs = " << number_outputs;
     if(number_outputs < 2){
-        context["one_output"] = true;
-        CROW_LOG_INFO << ":6117 one-output-warning ON";
+        context["nrl_warning_outputsingle"] = true;
+        CROW_LOG_INFO << "[N] :6115 one-output-warning ON";
     }
     else {
-        CROW_LOG_INFO << ":6120 one-output-warning OFF";
+        CROW_LOG_INFO << "[N] :6118 one-output-warning OFF";
     }
 
     for (auto const& apk: txd.additional_pks)
@@ -6274,7 +6275,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
             if (detailed_view)
             {
-                CROW_LOG_INFO << ":6283 detailed_view = 1";
+                CROW_LOG_INFO << "[N] :6277 detailed_view = 1";
 
                 // get block of given height, as we want to get its timestamp
                 cryptonote::block blk;
@@ -6323,14 +6324,14 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
                 // Juvenile spend warning: save mixin heights
                 mixin_heights.push_back(output_data.height);
-                CROW_LOG_INFO << ":6329 mixin_heights +" << output_data.height;
+                CROW_LOG_INFO << "[N] :6326 mixin_heights +" << output_data.height;
 
                 // get mixin timestamp from its orginal block
                 mixin_timestamps.push_back(blk.timestamp);
             }
             else //  if (detailed_view)
             {
-                CROW_LOG_INFO << ":6340 detailed_view = 0";
+                CROW_LOG_INFO << "[N] :6333 detailed_view = 0";
 
                 mixins.push_back(mstch::map {
                         {"mix_blk",        fmt::format("{:08d}", output_data.height)},
@@ -6354,19 +6355,22 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     if (detailed_view)
     {
-        CROW_LOG_INFO << ":6363 if_detailed_view:ENTER";
+        CROW_LOG_INFO << "[N] :6357 if_detailed_view:ENTER";
 
         uint64_t min_mix_timestamp {0};
         uint64_t max_mix_timestamp {0};
 
-        uint64_t max_mix_blk = *max_element(mixin_heights.begin(), mixin_heights.end());
-        CROW_LOG_INFO << ":6363 max_mix_blk = " << max_mix_blk;
-        if(tx_blk_height - max_mix_blk < 10) {
-            context["juvenile"] = true;
-            CROW_LOG_INFO << ":6367 juvenile-spend-warning ON";
-        }
-        else {
-            CROW_LOG_INFO << ":6372 juvenile-spend-warning OFF";
+        if(mixin_heights.size() > 0) {
+            uint64_t max_mix_blk = *max_element(mixin_heights.begin(), mixin_heights.end());
+            CROW_LOG_INFO << "[N] :6364 max_mix_blk = " << max_mix_blk;
+            if (tx_blk_height - max_mix_blk < 10) {
+                context["nrl_warning_juvenile"] = true;
+                CROW_LOG_INFO << "[N] :6367 juvenile-spend-warning ON";
+            } else {
+                CROW_LOG_INFO << "[N] :6369 juvenile-spend-warning OFF";
+            }
+        } else {
+            CROW_LOG_INFO << "[N] :6372 juvenile-spend-warning EMPTY";
         }
 
         pair<mstch::array, double> mixins_timescales
@@ -6391,7 +6395,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     }
     else
     {
-        CROW_LOG_INFO << ":6363 if_detailed_view:SKIP";
+        CROW_LOG_INFO << "[N] :6397 if_detailed_view:SKIP";
     }
 
 
