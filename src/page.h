@@ -6458,7 +6458,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     // #nrl_warning_outputsingle
     // Assert tx is not coinbase
-    if(context["has_inputs"]) {
+    if(context["has_inputs"] == true) {
         uint64_t number_outputs = txd.output_pub_keys.size();
         CROW_LOG_DEBUG << "[N] #nrl_warning_outputsingle number_outputs = " << number_outputs;
 
