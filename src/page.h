@@ -1370,7 +1370,6 @@ show_tx(string tx_hash_str, uint16_t with_ring_signatures = 0, bool refresh_page
     mstch::map tx_context;
 
 
-    CROW_LOG_INFO << "[N] :1372 construct_tx_context";
     tx_context = construct_tx_context(tx, static_cast<bool>(with_ring_signatures));
 
     tx_context["show_more_details_link"] = show_more_details_link;
@@ -3098,7 +3097,6 @@ show_checkrawtx(string raw_tx_data, string action)
             // we just dispaly it. We dont have any information about real mixins, etc,
             // so there is not much more we can do with tx data.
 
-            CROW_LOG_INFO << "[N] :3101 construct_tx_context";
             mstch::map tx_context = construct_tx_context(tx_from_blob);
 
             if (boost::get<bool>(tx_context["has_error"]))
@@ -3165,7 +3163,6 @@ show_checkrawtx(string raw_tx_data, string action)
 
         for (tools::wallet2::pending_tx& ptx: ptxs)
         {
-            CROW_LOG_INFO << "[N] :3167 construct_tx_context";
             mstch::map tx_context = construct_tx_context(ptx.tx, 1);
 
             if (boost::get<bool>(tx_context["has_error"]))
@@ -4652,7 +4649,6 @@ json_detailedtransaction(string tx_hash_str)
     }
 
     // get detailed tx information
-    CROW_LOG_INFO << "[N] :4654 construct_tx_context";
     mstch::map tx_context = construct_tx_context(tx, 1 /*full detailed */);
 
     // remove some page specific and html stuff
@@ -5998,7 +5994,6 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
     tx_details txd = get_tx_details(tx);
 
     const crypto::hash& tx_hash = txd.hash;
-    CROW_LOG_INFO << "[N] :6000 construct_tx_context:ENTER tx_hash=" << tx_hash;
 
     string tx_hash_str = pod_to_hex(tx_hash);
 
@@ -6091,8 +6086,8 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
             {"error_msg"             , string("")},
             {"have_raw_tx"           , false},
             {"show_more_details_link", true},
-            {"nrl_warning_juvenile"  , false},
-            {"nrl_warning_outputsingle" , false},
+            {"nrl_warning_ringunlocked", false},
+            {"nrl_warning_outputsingle", false},
             {"construction_time"     , string {}}
     };
 
@@ -6105,19 +6100,8 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     string add_tx_pub_keys;
 
-    // Juvenile spend warning: data
+    // #nrl_warning_ringunlocked: data
     vector<uint64_t> mixin_heights;
-
-    // One output warning
-    uint64_t number_outputs = txd.output_pub_keys.size();
-    CROW_LOG_INFO << "[N] :6112 number_outputs = " << number_outputs;
-    if(number_outputs < 2){
-        context["nrl_warning_outputsingle"] = true;
-        CROW_LOG_INFO << "[N] :6115 one-output-warning ON";
-    }
-    else {
-        CROW_LOG_INFO << "[N] :6118 one-output-warning OFF";
-    }
 
     for (auto const& apk: txd.additional_pks)
         add_tx_pub_keys += pod_to_hex(apk) + ";";
@@ -6275,8 +6259,6 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
             if (detailed_view)
             {
-                CROW_LOG_INFO << "[N] :6277 detailed_view = 1";
-
                 // get block of given height, as we want to get its timestamp
                 cryptonote::block blk;
 
@@ -6322,17 +6304,11 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
                         {"mix_is_it_real", false}, // a placeholder for future
                 });
 
-                // Juvenile spend warning: save mixin heights
-                mixin_heights.push_back(output_data.height);
-                CROW_LOG_INFO << "[N] :6326 mixin_heights +" << output_data.height;
-
                 // get mixin timestamp from its orginal block
                 mixin_timestamps.push_back(blk.timestamp);
             }
             else //  if (detailed_view)
             {
-                CROW_LOG_INFO << "[N] :6333 detailed_view = 0";
-
                 mixins.push_back(mstch::map {
                         {"mix_blk",        fmt::format("{:08d}", output_data.height)},
                         {"mix_pub_key",    pod_to_hex(output_data.pubkey)},
@@ -6341,6 +6317,10 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
                 });
 
             } // else  if (enable_mixins_details)
+
+            // #nrl_warning_ringunlocked: save mixin heights
+            mixin_heights.push_back(output_data.height);
+            CROW_LOG_DEBUG << "[N] #nrl_warning_ringunlocked mixin_heights +" << output_data.height;
 
             ++count;
 
@@ -6355,23 +6335,8 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     if (detailed_view)
     {
-        CROW_LOG_INFO << "[N] :6357 if_detailed_view:ENTER";
-
         uint64_t min_mix_timestamp {0};
         uint64_t max_mix_timestamp {0};
-
-        if(mixin_heights.size() > 0) {
-            uint64_t max_mix_blk = *max_element(mixin_heights.begin(), mixin_heights.end());
-            CROW_LOG_INFO << "[N] :6364 max_mix_blk = " << max_mix_blk;
-            if (tx_blk_height - max_mix_blk < 10) {
-                context["nrl_warning_juvenile"] = true;
-                CROW_LOG_INFO << "[N] :6367 juvenile-spend-warning ON";
-            } else {
-                CROW_LOG_INFO << "[N] :6369 juvenile-spend-warning OFF";
-            }
-        } else {
-            CROW_LOG_INFO << "[N] :6372 juvenile-spend-warning EMPTY";
-        }
 
         pair<mstch::array, double> mixins_timescales
                 = construct_mstch_mixin_timescales(
@@ -6392,10 +6357,6 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
         context["tx_prefix_hash"] = pod_to_hex(get_transaction_prefix_hash(tx));
 
-    }
-    else
-    {
-        CROW_LOG_INFO << "[N] :6397 if_detailed_view:SKIP";
     }
 
 
@@ -6479,6 +6440,39 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
 
     context.emplace("outputs", outputs);
 
+    // #nrl_warning_ringunlocked
+    // Assert mixins
+    if(!mixin_heights.empty()) {
+        uint64_t max_mix_blk = *max_element(mixin_heights.begin(), mixin_heights.end());
+        CROW_LOG_DEBUG << "[N] #nrl_warning_ringunlocked max_mix_blk = " << max_mix_blk;
+
+        if (tx_blk_height - max_mix_blk < 10) {
+            context["nrl_warning_ringunlocked"] = true;
+            CROW_LOG_DEBUG << "[N] #nrl_warning_ringunlocked ON";
+        } else {
+            CROW_LOG_DEBUG << "[N] #nrl_warning_ringunlocked OFF";
+        }
+    } else {
+        CROW_LOG_DEBUG << "[N] #nrl_warning_ringunlocked EMPTY";
+    }
+
+    // #nrl_warning_outputsingle
+    // Assert tx is not coinbase
+    if(context["has_inputs"]) {
+        uint64_t number_outputs = txd.output_pub_keys.size();
+        CROW_LOG_DEBUG << "[N] #nrl_warning_outputsingle number_outputs = " << number_outputs;
+
+        if(number_outputs < 2){
+            context["nrl_warning_outputsingle"] = true;
+            CROW_LOG_DEBUG << "[N] #nrl_warning_outputsingle ON";
+        }
+        else {
+            CROW_LOG_DEBUG << "[N] #nrl_warning_outputsingle OFF";
+        }
+    }
+    else {
+        CROW_LOG_DEBUG << "[N] #nrl_warning_outputsingle EMPTY"
+    }
 
     return context;
 }

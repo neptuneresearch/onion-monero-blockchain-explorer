@@ -72,18 +72,20 @@
       </table>
   </div>
 
-{{#nrl_warning_juvenile}}
+{{#nrl_warning_ringunlocked}}
   <div class="warning">
-      <h3>This is a warning message</h3>
-      <p>One of the ring members is younger than the lock time in the reference wallet, which enables software fingerprinting and may allow and adversary to infer the true TXO being spent.
+      <h3>Warning - Unlocked Ring Members</h3>
+      <h5>Transaction spends at least one output which is too young</h5>
+      <p>One of the ring members is younger than the lock time in the reference wallet. This enables software fingerprinting and may allow and adversary to infer the true TXO being spent.
       </p>
   </div>
-{{/nrl_warning_juvenile}}
+{{/nrl_warning_ringunlocked}}
 
 {{#nrl_warning_outputsingle}}
   <div class="warning">
-      <h3>This transaction contains less than 2 outputs</h3>
-      <p> This transaction has only one output, which (1) increases linkability risk, (2) reveals use of non-standard software, and (3) suggests that the transaction represents a wallet sweep or churn.</p>
+      <h3>Warning - Single Output</h3>
+      <h5>Transaction has fewer than two outputs</h5>
+      <p>This transaction has only one output. This (1) increases linkability risk, (2) reveals use of non-standard software, and (3) suggests that the transaction represents a wallet sweep or churn.</p>
   </div>
 {{/nrl_warning_outputsingle}}
 
