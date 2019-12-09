@@ -6471,7 +6471,7 @@ construct_tx_context(transaction tx, uint16_t with_ring_signatures = 0)
         }
     }
     else {
-        CROW_LOG_DEBUG << "[N] #nrl_warning_outputsingle EMPTY"
+        CROW_LOG_DEBUG << "[N] #nrl_warning_outputsingle EMPTY";
     }
 
     return context;
